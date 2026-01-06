@@ -42,8 +42,8 @@ fclean: clean
 
 re: fclean all
 
-asm_compil:		# to test de exe of asm code
-	nasm -f elf64 -o $(OBJ_DIR)/print.o sources/print.s
+asm_compil:		# to test de exe of asm code				FINIT LE MAKEFILE ASM
+	nasm -f elf64 -o $(OBJ_DIR)/print.o sources/print.s			
 
 
 .SILENT:
