@@ -6,7 +6,7 @@
 /*   By: afont <afont@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/05 10:31:26 by afont             #+#    #+#             */
-/*   Updated: 2026/01/05 13:27:30 by afont            ###   ########.fr       */
+/*   Updated: 2026/01/06 13:33:16 by afont            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
+#include <elf.h>
 
 #include "struct.h"
 #include "define.h"
@@ -26,7 +27,7 @@
 #ifndef WOODY_H
 # define WOODY_H
 
-int		is_elf64(t_data *data);
+void	is_elf64(t_data *data);
 int		is_file(char *f_path);
 void	ft_error(t_data *data);
 void	check_malloc(t_data *data, void *ptr);
@@ -34,5 +35,7 @@ t_data	*init_data(char **av);
 void	printf_map(unsigned char *map, size_t size);
 void	ft_clean(t_data *data);
 off_t	init_f_size(t_data *data);
+void	inject_payload(t_data *data);
+Elf64_Addr	get_new_vaddr(t_data *data, Elf64_Ehdr *ehdr, Elf64_Phdr *phdr);
 
 #endif

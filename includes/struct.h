@@ -6,7 +6,7 @@
 /*   By: afont <afont@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/05 11:15:30 by afont             #+#    #+#             */
-/*   Updated: 2026/01/05 15:14:01 by afont            ###   ########.fr       */
+/*   Updated: 2026/01/06 12:57:12 by afont            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,8 @@ struct	s_data
 	int				fd;
 	char			*f_path;
 	off_t			map_size;
-	unsigned char	*map;
+	unsigned char	*base_map;
+	unsigned char	*injected_map;
 };
 
 #endif

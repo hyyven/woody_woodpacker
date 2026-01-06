@@ -6,7 +6,7 @@
 /*   By: afont <afont@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/05 11:13:12 by afont             #+#    #+#             */
-/*   Updated: 2026/01/05 15:25:33 by afont            ###   ########.fr       */
+/*   Updated: 2026/01/06 10:50:11 by afont            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ void	ft_clean(t_data *data)
 		exit(1);
 	if (data->fd >= 0)
 		close(data->fd);
-	if (data->map)
-		munmap(data->map, data->map_size);
+	if (data->base_map)
+		munmap(data->base_map, data->map_size);
 	free(data);
 }

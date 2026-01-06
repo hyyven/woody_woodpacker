@@ -6,7 +6,7 @@
 /*   By: afont <afont@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/05 11:21:37 by afont             #+#    #+#             */
-/*   Updated: 2026/01/05 15:25:37 by afont            ###   ########.fr       */
+/*   Updated: 2026/01/06 10:49:05 by afont            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ t_data	*init_data(char **av)
 	data->f_path = av[1];
 	data->fd = is_file(data->f_path);
 	data->map_size = init_f_size(data);
+	data->base_map = mmap(NULL, data->map_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, data->fd, 0);
 	return (data);
 }
 

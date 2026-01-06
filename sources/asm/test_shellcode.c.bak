@@ -1,0 +1,15 @@
+#include <stdio.h>
+
+
+int main()
+{
+  char code[] = "\x6a\x01\x58\x48\x89\xc7\x99\xb2\x0a\x48\x8d\x35\x08\x00\x00\x00\x0f\x05\x31\xff\xb0\x3c\x0f\x05\x2e\x2e\x57\x4f\x4f\x44\x59\x2e\x2e\x0a";
+  // printf("aa\n");
+  int (*func)();             // function pointer
+  // printf("aa\n");
+  func = (int (*)()) code;   // func points to our shellcode
+  // printf("aa\n");
+  (int)(*func)();            // execute a function code[]
+  // printf("aa\n");
+  return 1;
+}

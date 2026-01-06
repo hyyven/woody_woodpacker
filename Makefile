@@ -11,6 +11,11 @@ LIB = _libft/libft.a
 # MATH_FLAGS = -lm
 TOTAL_FILES = $(words $(SRCS))
 
+ASM_PAYLOAD = sources/asm/payload
+ASM_CODE = sources/asm/print.s
+C_TESTER = sources/asm/test_shellcode.c
+C_TESTER_EXE = test_shellcode
+
 all: $(NAME)
 
 $(OBJ_DIR)/%.o: %.c $(HEADER)
@@ -33,21 +38,30 @@ $(NAME): $(OBJS)
 clean:
 	@make clean -C _libft --no-print-directory
 	@rm -rf $(OBJS) $(OBJ_DIR)
+	@rm -rf $(ASM_PAYLOAD) 
 	@echo "   \033[41;1mObject file deleted\033[0m"
 
 fclean: clean
 	@make fclean -C _libft --no-print-directory
 	@rm -rf $(NAME)
+	@rm -rf $(C_TESTER_EXE)
 	@echo "   \033[41;1m$(NAME) deleted\033[0m"
 
 re: fclean all
 
-asm_compil:		# to test de exe of asm code				FINIT LE MAKEFILE ASM
-	nasm -f elf64 -o $(OBJ_DIR)/print.o sources/print.s			
+asm_compil_tester:		# to test exe of asm code
+	nasm -f elf64 -o $(OBJ_DIR)/print.o $(ASM_CODE)
+	ld -o print_asm $(OBJ_DIR)/print.o
 
+asm_compil:				# to generate the payload, usable in c 
+	nasm -f bin -o $(ASM_PAYLOAD) $(ASM_CODE)
+	hexdump -v -e '"\\\x\" 1/1 "%02x"' $(ASM_PAYLOAD)
+
+asm_test_c:				# to compile the c tester for the asm payload
+	$(CC) $(CFLAGS) -z execstack -o $(C_TESTER_EXE) $(C_TESTER)
 
 .SILENT:
-.PHONY: all clean fclean re run 
+.PHONY: all clean fclean re run asm_compil asm_compil_tester
 
 
 # readelf -h <file> 		to check if x64 or x32
