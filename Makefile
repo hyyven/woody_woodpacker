@@ -12,7 +12,7 @@ LIB = _libft/libft.a
 TOTAL_FILES = $(words $(SRCS))
 
 ASM_PAYLOAD = sources/asm/payload
-ASM_CODE = sources/asm/print.s
+ASM_CODE = sources/asm/shellcode.s
 C_TESTER = sources/asm/test_shellcode.c
 C_TESTER_EXE = test_shellcode
 
@@ -43,7 +43,7 @@ clean:
 
 fclean: clean
 	@make fclean -C _libft --no-print-directory
-	@rm -rf $(NAME)
+	@rm -rf $(NAME) woody
 	@rm -rf $(C_TESTER_EXE)
 	@echo "   \033[41;1m$(NAME) deleted\033[0m"
 

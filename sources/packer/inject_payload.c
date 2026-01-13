@@ -6,7 +6,7 @@
 /*   By: afont <afont@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/06 10:36:39 by afont             #+#    #+#             */
-/*   Updated: 2026/01/06 16:01:20 by afont            ###   ########.fr       */
+/*   Updated: 2026/01/13 09:04:53 by afont            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,8 @@ Elf64_Addr	get_new_vaddr(t_data *data, Elf64_Ehdr *ehdr, Elf64_Phdr *phdr)
 		printf("[DEBUG] phdr[i].p_type: %u, p_vaddr: 0x%lx, p_memsz: 0x%lx\n", phdr[i].p_type, phdr[i].p_vaddr, phdr[i].p_memsz);
 		if (phdr[i].p_type == PT_LOAD)
 		{
-			Elf64_Addr seg_end = phdr[i].p_vaddr + phdr[i].p_memsz;
-			if (seg_end > max_vaddr)
+			Elf64_Addr seg_end = phdr[i].p_vaddr + phdr[i].p_memsz;	// end address of segment
+			if (seg_end > max_vaddr)								// find highest vaddr used
 				max_vaddr = seg_end;
 		}
 	}
@@ -52,38 +52,38 @@ Elf64_Addr	get_new_vaddr(t_data *data, Elf64_Ehdr *ehdr, Elf64_Phdr *phdr)
 	return (new_vaddr);
 }
 
-void	patch_placeholder(char *payload_buffer, Elf64_Addr old_entry, Elf64_Addr new_vaddr)
+void	patch_placeholder(char *payload_buffer, Elf64_Addr old_entry, Elf64_Addr new_vaddr, unsigned long int payload_jmp_pos)
 {
 	int				jmp_offset;
 
 	printf("[INFO] patching payload placeholders\n");
-	jmp_offset = (int)(old_entry - (new_vaddr + PAYLOAD_JMP_POS + 5));
+	jmp_offset = (int)(old_entry - (new_vaddr + payload_jmp_pos + 5));
 	printf("\n--------------- jump offset calcul ---------------\n");
 	printf("[DEBUG] target (old_entry)                   	: 0x%lx\n", old_entry);
-	printf("[DEBUG] source (new_vaddr + jmp_position + 5) 	: 0x%lx\n", (new_vaddr + PAYLOAD_JMP_POS + 5));
+	printf("[DEBUG] source (new_vaddr + jmp_position + 5) 	: 0x%lx\n", (new_vaddr + payload_jmp_pos + 5));
 	printf("[DEBUG] new_vaddr                         	: 0x%lx\n", new_vaddr);
-	printf("[DEBUG] PAYLOAD_JMP_POS                   	: %d (0x%x)\n", PAYLOAD_JMP_POS, PAYLOAD_JMP_POS);
+	printf("[DEBUG] payload_jmp_pos                   	: %ld (0x%lx)\n", payload_jmp_pos, payload_jmp_pos);
 	printf("[DEBUG] 5 (size of jmp instruction (1 byte) + offset of 'where to jump'(4 bytes))\n");
 	printf("[DEBUG] offset = target - source\n");
-	printf("[DEBUG]        = 0x%lx - 0x%lx\n", old_entry, (new_vaddr + PAYLOAD_JMP_POS + 5));
+	printf("[DEBUG]        = 0x%lx - 0x%lx\n", old_entry, (new_vaddr + payload_jmp_pos + 5));
 	printf("[DEBUG]        = %d (0x%x)\n", jmp_offset, (unsigned int)jmp_offset);
 	printf("--------------------------------------------------\n\n");
 
 	// write offset into payload (little endian, bytes reversed)
 	// write 4 bytes at position of jmp offset
-	printf("[DEBUG] *(int *)(payload_buffer + PAYLOAD_JMP_POS + 1) = %d\n", *(int *)(payload_buffer + PAYLOAD_JMP_POS + 1));
-	*(int *)(payload_buffer + PAYLOAD_JMP_POS + 1) = jmp_offset;
-	printf("[DEBUG] *(int *)(payload_buffer + PAYLOAD_JMP_POS + 1) = %d\n", *(int *)(payload_buffer + PAYLOAD_JMP_POS + 1));
+	printf("[DEBUG] *(int *)(payload_buffer + payload_jmp_pos + 1) = %d\n", *(int *)(payload_buffer + payload_jmp_pos + 1));
+	*(int *)(payload_buffer + payload_jmp_pos + 1) = jmp_offset;
+	printf("[DEBUG] *(int *)(payload_buffer + payload_jmp_pos + 1) = %d\n", *(int *)(payload_buffer + payload_jmp_pos + 1));
 }
 
-void	append_payload(t_data *data, Elf64_Addr old_entry, Elf64_Addr new_vaddr)
+void	append_payload(t_data *data, Elf64_Addr old_entry, Elf64_Addr new_vaddr, unsigned long int payload_jmp_pos)
 {
 	unsigned char	*map;
 	char			payload_buffer[PAYLOAD_SIZE];
 
-	printf("[INFO] appending payload to the ELF file\n");
+	printf("[INFO] appending payload to the elf file\n");
 	ft_memcpy(payload_buffer, PAYLOAD, PAYLOAD_SIZE);
-	patch_placeholder(payload_buffer, old_entry, new_vaddr);
+	patch_placeholder(payload_buffer, old_entry, new_vaddr, payload_jmp_pos);
 	printf("[DEBUG] basepayload: "); printf_map((unsigned char *)PAYLOAD, PAYLOAD_SIZE);
 	printf("[DEBUG] new payload: "); printf_map((unsigned char *)payload_buffer, PAYLOAD_SIZE);
 	printf("[DEBUG] old entry: 0x%lx, new vaddr: 0x%lx\n", old_entry, new_vaddr);
@@ -100,7 +100,7 @@ void	patch_entry(t_data *data, Elf64_Addr new_vaddr)
 {
 	Elf64_Ehdr		*ehdr;
 
-	printf("[INFO] patching ELF entry point to new payload vaddr\n");
+	printf("[INFO] patching elf entry point to new payload vaddr\n");
 	ehdr = (Elf64_Ehdr *)data->injected_map;
 	printf("[DEBUG] old entry: 0x%lx\n", ehdr->e_entry);
 	ehdr->e_entry = new_vaddr;
@@ -113,7 +113,7 @@ void	patch_note_segment(t_data *data, Elf64_Addr new_vaddr)
 	Elf64_Phdr		*phdr;
 
 	ehdr = (Elf64_Ehdr *)data->injected_map;
-	phdr = (Elf64_Phdr *)(data->base_map + ehdr->e_phoff);
+	phdr = (Elf64_Phdr *)(data->injected_map + ehdr->e_phoff);
 	for (int i = 0; i < ehdr->e_phnum; i++)
 	{
 		if (phdr[i].p_type == PT_NOTE)
@@ -131,8 +131,25 @@ void	patch_note_segment(t_data *data, Elf64_Addr new_vaddr)
 			phdr[i].p_filesz = PAYLOAD_SIZE;
 			phdr[i].p_memsz = PAYLOAD_SIZE;
 			phdr[i].p_flags = PF_R | PF_X;
+			phdr[i].p_align = 0x1000;
 		}
 	}
+}
+
+int	find_jmp_offset()
+{
+	long unsigned int	i;
+
+	i = -1;
+	while (++i <= PAYLOAD_SIZE)
+	{
+		if (PAYLOAD[i] == '\xe9')
+		{
+			printf("i + 1: %ld", i);
+			return (i);
+		}
+	}
+	return (-1);
 }
 
 void	inject_payload(t_data *data)
@@ -142,12 +159,16 @@ void	inject_payload(t_data *data)
 	Elf64_Addr		old_entry;
 	Elf64_Addr		new_vaddr;
 	
-	printf("[INFO] injecting payload into the ELF file\n");
+	printf("[INFO] injecting payload into the elf file\n");
 	ehdr = (Elf64_Ehdr *)data->base_map;						// pointer to elf header
 	old_entry = ehdr->e_entry;									// virt addr of first part of exe
 	phdr = (Elf64_Phdr *)(data->base_map + ehdr->e_phoff);		// program header offset / list of "LOAD, NOTE etc"
 	new_vaddr = get_new_vaddr(data, ehdr, phdr);
-	append_payload(data, old_entry, new_vaddr);
+	append_payload(data, old_entry, new_vaddr, find_jmp_offset());
+	// printf("[DEBUG] pre map: ");printf_map(data->injected_map, data->map_size + PAYLOAD_SIZE);
+	encrypt_binary(data);
+	// printf("[DEBUG] post map: ");printf_map(data->injected_map, data->map_size + PAYLOAD_SIZE);
 	patch_entry(data, new_vaddr);
 	patch_note_segment(data, new_vaddr);
+	write_to_file(data);
 }					

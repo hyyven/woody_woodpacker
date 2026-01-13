@@ -6,7 +6,7 @@
 /*   By: afont <afont@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/05 11:21:37 by afont             #+#    #+#             */
-/*   Updated: 2026/01/06 10:49:05 by afont            ###   ########.fr       */
+/*   Updated: 2026/01/13 09:04:09 by afont            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,9 +32,7 @@ off_t	init_f_size(t_data *data)
 	map_size = lseek(data->fd, 0, SEEK_END);
 	if (map_size == -1)
 	{
-		perror("[ERROR] lseek");
-		ft_clean(data);
-		exit(1);
+		ft_error(data, "lseek failed");
 	}
 	return (map_size);
 }

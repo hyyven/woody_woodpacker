@@ -1,35 +1,24 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_error.c                                         :+:      :+:    :+:   */
+/*   write_to_file.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: afont <afont@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/01/05 11:13:12 by afont             #+#    #+#             */
-/*   Updated: 2026/01/13 09:05:06 by afont            ###   ########.fr       */
+/*   Created: 2026/01/12 08:20:37 by afont             #+#    #+#             */
+/*   Updated: 2026/01/13 09:04:13 by afont            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../includes/woody.h"
 
-void	ft_error(t_data *data, char *msg)
+void	write_to_file(t_data *data)
 {
-	char	*error_msg;
-
-	error_msg = ft_strjoin("[ERROR] ", msg);
-	perror(error_msg);
-	free(error_msg);
-	ft_clean(data);
-	exit(1);
-}
-
-void	ft_clean(t_data *data)
-{
-	if (!data)
-		exit(1);
-	if (data->fd >= 0)
-		close(data->fd);
-	if (data->base_map)
-		munmap(data->base_map, data->map_size);
-	free(data);
+	int	fd;
+	
+	fd = open("woody", O_WRONLY | O_TRUNC | O_CREAT);
+	if (fd < 0)
+		ft_error(data, "open failed");
+	write(fd, data->injected_map, data->map_size + PAYLOAD_SIZE);
+	free(data->injected_map);
 }
