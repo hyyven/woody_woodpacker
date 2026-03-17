@@ -19,7 +19,9 @@ _start:
 
 	; decrypt start
 	lea rsi, [rel v_start_addr]	; load address of v_start_addr / rsi point to v_start_addr
-	mov rdi, [rsi]				; read 8 first bytes of v_start_addr / rdi = rsi = v_start_addr
+	mov rdi, [rsi]				; read 8 first bytes of v_start_addr / rdi = relative offset to decrypt
+	lea r8, [rel _start]		; load absolute memory address of shellcode base
+	add rdi, r8					; rdi = absolute vaddr to decrypt
 	mov rcx, [rsi + 8]			; read 8 next bytes of v_start_addr / rcx = rsi + 8 = v_start_addr + 8 = v_size
 	mov rdx, [rsi + 16]			; read 16 next bytes of v_start_addr / rdx = rsi + 16 = v_start_addr + 16 = v_key
 

@@ -39,6 +39,6 @@ void		inject_payload(t_data *data);
 Elf64_Addr	get_new_vaddr(t_data *data, Elf64_Ehdr *ehdr, Elf64_Phdr *phdr);
 void		write_to_file(t_data *data);
 int			find_jmp_offset();
-void		encrypt_binary(t_data *data);
+void		encrypt_binary(t_data *data, Elf64_Addr new_vaddr);
 
 #endif

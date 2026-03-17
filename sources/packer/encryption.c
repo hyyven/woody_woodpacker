@@ -99,7 +99,7 @@ uint64_t	*find_entry_point(t_data *data, Elf64_Ehdr *ehdr, t_ptload_data *ptload
 	return (NULL);
 }
 
-void	encrypt_binary(t_data *data)
+void    encrypt_binary(t_data *data, Elf64_Addr new_vaddr)
 {
 	Elf64_Ehdr		*ehdr;
 	Elf64_Phdr		*phdr;
@@ -108,6 +108,7 @@ void	encrypt_binary(t_data *data)
 	uint64_t		*entry;		// [0] start_offset, [1] size
 	t_ptload_data	*ptload;
 	unsigned char	*payload_ptr;
+	uint64_t		relative_vaddr;
 
 	ehdr = (Elf64_Ehdr *)data->injected_map;
 	phdr = (Elf64_Phdr *)(data->injected_map + ehdr->e_phoff);
@@ -115,6 +116,8 @@ void	encrypt_binary(t_data *data)
 	key = generate_key();
 	entry = find_entry_point(data, ehdr, ptload);
 	printf("[INFO] encrypting text segment...\n");
+	// encrypt the executable code with XOR key
+	// ngl it's a pretty bad encryption method
 	for (i = 0; i < entry[1]; i++)
 	{
 		data->injected_map[entry[0] + i] ^= ((unsigned char *)&key)[i % 8];
@@ -122,7 +125,8 @@ void	encrypt_binary(t_data *data)
 	payload_ptr = data->injected_map + data->map_size;
 	// virtual address corresponding to the start of encryption
 	Elf64_Addr encrypted_start_vaddr = ptload->vaddr + (entry[0] - ptload->offset);
-	patch_value(payload_ptr, PAYLOAD_SIZE, TEXT_ADDR_PLACEHOLDER, encrypted_start_vaddr);
+	relative_vaddr = (uint64_t)(encrypted_start_vaddr - new_vaddr); // PIE support; offset from payload to encrypted executable code
+	patch_value(payload_ptr, PAYLOAD_SIZE, TEXT_ADDR_PLACEHOLDER, relative_vaddr);
 	patch_value(payload_ptr, PAYLOAD_SIZE, TEXT_SIZE_PLACEHOLDER, entry[1]);
 	patch_value(payload_ptr, PAYLOAD_SIZE, KEY_PLACEHOLDER, key);
 	free(ptload);

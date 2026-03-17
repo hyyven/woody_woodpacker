@@ -12,6 +12,12 @@
 
 #include "../../includes/woody.h"
 
+// find a memory address to add the payload
+// address must be:
+//	at the end of the file (offset = file size)
+//	aligned on a linux page (4096 bytes)
+// 
+// address will be used as the new entry point of the elf file
 Elf64_Addr	get_new_vaddr(t_data *data, Elf64_Ehdr *ehdr, Elf64_Phdr *phdr)
 {
 	Elf64_Addr		max_vaddr;	
@@ -36,17 +42,17 @@ Elf64_Addr	get_new_vaddr(t_data *data, Elf64_Ehdr *ehdr, Elf64_Phdr *phdr)
 	printf("\n------------- new vaddr calcul -------------\n");
 	printf("[DEBUG] max vaddr found in phdr			: 0x%lx\n", max_vaddr);
 	printf("[DEBUG] current file size (offset)		: %lu (0x%lx)\n", data->map_size, data->map_size);
-	
-	new_vaddr = (max_vaddr + 0x1000) & ~0xFFF; // align to next page
+
+	new_vaddr = (max_vaddr + 0x1000) & ~0xFFF; // align to next page ()
 	printf("[DEBUG] -> step 1 (next page start)		: 0x%lx\n", new_vaddr);
-	
-	size_t alignment = (data->map_size % 0x1000);
+
+	size_t alignment = (data->map_size % 0x1000); // offset is the size of the file -> because we're adding the payload at the end of the file
 	printf("[DEBUG] -> step 2 (offset modulo 4096)		: %lu (0x%lx)\n", alignment, alignment);
-	
+
 	new_vaddr += alignment;    // add offset remainder
 	printf("[DEBUG] -> resulting new vaddr			: 0x%lx\n", new_vaddr);
 	printf("[DEBUG] verification: (0x%lx %% 4096) == (0x%lx %% 4096)\n", new_vaddr, data->map_size);
-	printf("[DEBUG]                            %lu == %lu\n", new_vaddr % 4096, data->map_size % 4096);
+	printf("[DEBUG]                           %lu == %lu\n", new_vaddr % 4096, data->map_size % 4096);
 	printf("--------------------------------------------\n\n");
 
 	return (new_vaddr);
@@ -87,7 +93,7 @@ void	append_payload(t_data *data, Elf64_Addr old_entry, Elf64_Addr new_vaddr, un
 	printf("[DEBUG] basepayload: "); printf_map((unsigned char *)PAYLOAD, PAYLOAD_SIZE);
 	printf("[DEBUG] new payload: "); printf_map((unsigned char *)payload_buffer, PAYLOAD_SIZE);
 	printf("[DEBUG] old entry: 0x%lx, new vaddr: 0x%lx\n", old_entry, new_vaddr);
-	
+
 	// append to new map
 	map = ft_calloc(1, data->map_size + PAYLOAD_SIZE);
 	check_malloc(data, map);
@@ -118,24 +124,27 @@ void	patch_note_segment(t_data *data, Elf64_Addr new_vaddr)
 	{
 		if (phdr[i].p_type == PT_NOTE)
 		{
-			printf("[DEBUG] phdr[i].p_type: %u, phdr[i].p_offset: %lu, phdr[i].p_vaddr: 0x%lx, phdr[i].p_filesz: %lu, phdr[i].p_memsz: %lu, phdr[i].p_flags: %u",
+			printf("[DEBUG] phdr[i].p_type: %u, phdr[i].p_offset: %lu, phdr[i].p_vaddr: 0x%lx, phdr[i].p_filesz: %lu, phdr[i].p_memsz: %lu, phdr[i].p_flags: %u\n",
 				phdr[i].p_type,
 				phdr[i].p_offset,
 				phdr[i].p_vaddr,
 				phdr[i].p_filesz,
 				phdr[i].p_memsz,
 				phdr[i].p_flags);
-			phdr[i].p_type = PT_LOAD;
-			phdr[i].p_offset = data->map_size;
-			phdr[i].p_vaddr = new_vaddr;
-			phdr[i].p_filesz = PAYLOAD_SIZE;
-			phdr[i].p_memsz = PAYLOAD_SIZE;
-			phdr[i].p_flags = PF_R | PF_X;
-			phdr[i].p_align = 0x1000;
+			phdr[i].p_type = PT_LOAD; // segment type = PT_LOAD (eg. execut segment)
+			phdr[i].p_offset = data->map_size; // offset = end of file (where payload is in the file)
+			phdr[i].p_vaddr = new_vaddr; // where payload will be load in memory ???
+			phdr[i].p_filesz = PAYLOAD_SIZE; // size of payload in the file
+			phdr[i].p_memsz = PAYLOAD_SIZE; // size of payload in memory (same as file because we want to load the whole payload in memory)
+			phdr[i].p_flags = PF_R | PF_X; // read and execute permissions for the payload segment
+			phdr[i].p_align = 0x1000; // align on page size (4096 bytes) for linux
 		}
 	}
 }
 
+// find the offset of the oppcode jmp in the payload
+// to patch it with the correct offset
+// to jump to the old entry point of the executable after executing the payload
 int	find_jmp_offset()
 {
 	long unsigned int	i;
@@ -145,7 +154,7 @@ int	find_jmp_offset()
 	{
 		if (PAYLOAD[i] == '\xe9')
 		{
-			printf("i + 1: %ld", i);
+			// printf("i + 1: %ld", i);
 			return (i);
 		}
 	}
@@ -166,9 +175,9 @@ void	inject_payload(t_data *data)
 	new_vaddr = get_new_vaddr(data, ehdr, phdr);
 	append_payload(data, old_entry, new_vaddr, find_jmp_offset());
 	// printf("[DEBUG] pre map: ");printf_map(data->injected_map, data->map_size + PAYLOAD_SIZE);
-	encrypt_binary(data);
+	encrypt_binary(data, new_vaddr);
 	// printf("[DEBUG] post map: ");printf_map(data->injected_map, data->map_size + PAYLOAD_SIZE);
 	patch_entry(data, new_vaddr);
 	patch_note_segment(data, new_vaddr);
 	write_to_file(data);
-}					
+}
