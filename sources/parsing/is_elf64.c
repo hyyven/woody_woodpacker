@@ -16,7 +16,7 @@ void	is_elf64(t_data *data)
 {
 	// unsigned char	*map;
 	unsigned char	elf_magic[6];
-	
+
 	if (data->base_map == MAP_FAILED)
 	{
 		ft_error(data, "mmap failed");

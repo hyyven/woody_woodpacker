@@ -28,7 +28,7 @@
 # define WOODY_H
 
 void		is_elf64(t_data *data);
-int			is_file(char *f_path);
+int			init_fd(char *f_path);
 void		ft_error(t_data *data, char *msg);
 void		check_malloc(t_data *data, void *ptr);
 t_data		*init_data(char **av);

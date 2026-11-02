@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   is_file.c                                          :+:      :+:    :+:   */
+/*   init_fd.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: afont <afont@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,10 +12,10 @@
 
 #include "../../includes/woody.h"
 
-int	is_file(char *f_path)
+int	init_fd(char *f_path)
 {
 	int	fd;
-	
+
 	fd = open(f_path, O_RDONLY);
 	if (fd < 0)
 	{

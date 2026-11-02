@@ -15,10 +15,11 @@
 int	main(int ac, char **av)
 {
 	t_data	*data;
-	
+
 	if (ac != 2)
 	{
-		ft_error(NULL, "Usage: ./woody_woodpacker <binary>");
+		printf("[ERROR] Usage: ./woody_woodpacker <binary>\n");
+		return (1);
 	}
 	data = init_data(av);
 	is_elf64(data);

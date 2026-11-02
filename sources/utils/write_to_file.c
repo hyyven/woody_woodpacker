@@ -16,7 +16,7 @@ void	write_to_file(t_data *data)
 {
 	int	fd;
 	
-	fd = open("woody", O_WRONLY | O_TRUNC | O_CREAT);
+	fd = open("woody", O_WRONLY | O_TRUNC | O_CREAT, 0777);
 	if (fd < 0)
 		ft_error(data, "open failed");
 	write(fd, data->injected_map, data->map_size + PAYLOAD_SIZE);
